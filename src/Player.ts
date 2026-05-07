@@ -107,6 +107,13 @@ export class Player extends GameObject {
             game.terrain.convertToSoil(posDondeVaAIr)
             input.keys['Space'] = false;
         }
+        for (let i = 0; i < 4; i++) {
+            if (input.isDown(`Digit${i + 1}`)) {
+                game.ui.toolbar.marcarSlot(i);
+                input.keys[`Digit${i + 1}`] = false;
+            }
+        }
+        
 
         
 
