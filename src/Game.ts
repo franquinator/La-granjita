@@ -4,6 +4,7 @@ import { Player } from './Player.js';
 import { Marco } from './Marco.js';
 import { GameObject } from './GameObject.js';
 import { Terrain } from './Terrain.js';
+import { UI } from './UI.js';
 
 export class Game {
     app: PIXI.Application | null = null;
@@ -14,6 +15,7 @@ export class Game {
     updateGameObjects: GameObject[] = [];
     money: number = 0;
     player: Player = new Player({ width: 40, height: 40, color: 0xff6b6b, speed: 300 });
+    ui: UI = new UI();
 
     async init(): Promise<void> {
         this.app = new PIXI.Application();
@@ -37,6 +39,7 @@ export class Game {
         this.marco.init();
         this.player.init();
         this.terrain.init();
+        this.ui.init();
         
 
         this.app.ticker.add((ticker) => {
