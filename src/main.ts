@@ -1,4 +1,4 @@
-import { game } from './game.js';
+import { game } from './Game.js';
 import { Terrain } from './Terrain.js';
 
 (async () => {

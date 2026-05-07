@@ -2,7 +2,8 @@ import * as PIXI from 'pixi.js';
 import { GameObject } from './GameObject.js';
 import { Inventory } from './Inventory.js';
 import { Vector2D } from './types.js';
-import { game } from './game.js';
+import { game } from './Game.js';
+
 
 export interface PlayerOptions {
     width?: number;
@@ -42,7 +43,7 @@ export class Player extends GameObject {
         this.sprite.zIndex = 1;
         this.sprite.rect(0, 0, this.width, this.height);
         this.sprite.fill(this.color);
-        this.sprite.pivot.set(this.width/2, this.width/2);
+        this.sprite.pivot.set(this.width / 2, this.width / 2);
 
         this.newSprite = new PIXI.Graphics();
         this.newSprite.zIndex = 2;
@@ -99,23 +100,31 @@ export class Player extends GameObject {
 
         posDondeVaAIr = game.terrain.getTilePosition(posDondeVaAIr)
 
-        game.marco.setPosition(posDondeVaAIr.x
-            , posDondeVaAIr.y);
+        if (game.ui.toolbar.getSelecteItem() == "Pala") {
+            game.marco.setPosition(posDondeVaAIr.x, posDondeVaAIr.y);
 
-        if (input.isDown('Space')) {
-            //this.interact(game);
-            game.terrain.convertToSoil(posDondeVaAIr)
-            input.keys['Space'] = false;
+            if (input.isDown('Space')) {
+                //this.interact(game);
+                game.terrain.convertToSoil(posDondeVaAIr)
+                input.keys['Space'] = false;
+            }
+            game.marco.setVisibility(true);
         }
+        else{
+            game.marco.setVisibility(false);
+        }
+
+
+
         for (let i = 0; i < 4; i++) {
             if (input.isDown(`Digit${i + 1}`)) {
                 game.ui.toolbar.marcarSlot(i);
                 input.keys[`Digit${i + 1}`] = false;
             }
         }
-        
 
-        
+
+
 
 
         this.updatePosition()

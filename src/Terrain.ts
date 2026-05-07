@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { GameObject} from './GameObject.js';
 import { Vector2D } from './types.js';
-import { game } from './game.js';
+import { game } from './Game.js';
 
 export class Tile extends GameObject {
     color: number;

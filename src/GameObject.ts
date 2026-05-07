@@ -26,5 +26,5 @@ export interface IGame {
 
 import { Player } from './Player.js';
 import { Input } from './Input.js';
-import { Game } from './game.js';
+import { Game } from './Game.js';
 

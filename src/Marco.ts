@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import {GameObject } from './GameObject.js';
-import { game } from './game.js';
+import { game } from './Game.js';
 
 export class Marco extends GameObject {
     size: number;
@@ -32,6 +32,10 @@ export class Marco extends GameObject {
         if (this.sprite) {
             game.addVisually(this.sprite);
         }
+    }
+
+    setVisibility(condition : boolean): void{
+        this.sprite!.visible = condition;
     }
 
     setPosition(x: number, y: number): void {
