@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
-import { GameObject} from './GameObject.js';
+import { GameObject } from './GameObject.js';
+import { game } from './Game.js';
 
 export const ANIMAL_TYPES = {
     chicken: {
@@ -64,6 +65,11 @@ export class Animal extends GameObject {
         }
     }
 
+    init(): void {
+        game.addToUpdate(this);
+        game.addVisually(this.sprite);
+    }
+
     update(delta: number, _game: Game): void {
         if (!this.hasProduct) {
             this.feedTimer += delta;
@@ -91,4 +97,4 @@ export class Animal extends GameObject {
 }
 
 import { Player } from './Player.js';
-import { Game } from './game.js';
+import { Game } from './Game.js';

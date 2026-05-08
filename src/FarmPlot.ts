@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
-import { GameObject, Game } from './GameObject.js';
+import { GameObject } from './GameObject.js';
+import { Game } from './Game.js';
 import { Crop, CropType } from './Crop.js';
 import { Player } from './Player.js';
 

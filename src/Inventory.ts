@@ -1,8 +1,61 @@
-export interface InventoryItem {
+import * as PIXI from 'pixi.js';
+
+/**
+ * Clase base para cualquier item del inventario.
+ * Puede ser una semilla, cosechas, o cualquier otro objeto.
+ */
+export class InventoryItem {
     id: string;
     name: string;
     count: number;
+    
+    // Color para mostrar en el inventario (cuando no hay sprite)
+    color: number = 0xFFFFFF;
+    
+    constructor(id: string, name: string, count: number = 1, color: number = 0xFFFFFF) {
+        this.id = id;
+        this.name = name;
+        this.count = count;
+        this.color = color;
+    }
+    
+    /** Incrementa la cantidad */
+    add(count: number): void {
+        this.count += count;
+    }
+    
+    /** Decrementa la cantidad, retorna si aún tiene items */
+    remove(count: number): boolean {
+        this.count -= count;
+        return this.count > 0;
+    }
 }
+
+/**
+ * Representa una herramienta del juego.
+ * Tiene sprite y puede usarse en el gameplay.
+ */
+export class InventoryTool extends InventoryItem {
+    // Texture para mostrar en la UI
+    texture: PIXI.Texture | null = null;
+    
+    constructor(id: string, name: string, texture: PIXI.Texture | null = null) {
+        super(id, name, 1, 0xFFFFFF);
+        this.texture = texture;
+    }
+}
+
+/**
+ * Colores por defecto para items del inventario
+ */
+export const ITEM_COLORS: Record<string, number> = {
+    'Trigo': 0xF4D03F,
+    'Maíz': 0xF39C12,
+    'Tomate': 0xE74C3C,
+    'Frutilla': 0xFF6B6B,
+    'huevo': 0xFFFF00,
+    'leche': 0xFFFFFF
+};
 
 export class Inventory {
     capacity: number;
@@ -17,7 +70,8 @@ export class Inventory {
         if (existing) {
             existing.count += count;
         } else if (this.items.length < this.capacity) {
-            this.items.push({ ...item, count });
+            const color = ITEM_COLORS[item.name] || 0xFFFFFF;
+            this.items.push(new InventoryItem(item.id, item.name, count, color));
         }
         return existing !== undefined || this.items.length <= this.capacity;
     }

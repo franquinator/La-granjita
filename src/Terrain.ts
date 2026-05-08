@@ -2,11 +2,31 @@ import * as PIXI from 'pixi.js';
 import { GameObject} from './GameObject.js';
 import { Vector2D } from './types.js';
 import { game } from './Game.js';
+import { Crop, CropType } from './Crop.js';
+
+let cropTextures: Map<string, PIXI.Texture> = new Map();
+let spritesheetLoaded = false;
+
+async function loadCropSprites(): Promise<void> {
+    if (spritesheetLoaded) return;
+    try {
+        const sheet = await PIXI.Assets.load<PIXI.Texture>('Spring Crops/Spring Crops.png');
+        for (let i = 0; i < 7; i++) {
+            const frame = new PIXI.Rectangle(i * 16, 0, 16, 16);
+            const texture = new PIXI.Texture({ source: sheet.source, frame });
+            cropTextures.set(`frame_${i}`, texture);
+        }
+        spritesheetLoaded = true;
+    } catch (e) {
+        console.error('Error loading crop sprites:', e);
+    }
+}
 
 export class Tile extends GameObject {
     color: number;
     size: number;
     type: string;
+    plantSprite: PIXI.Sprite | null = null;
 
     constructor(type: string, color: number, size: number, x:number, y:number) {
         super();
@@ -38,9 +58,126 @@ export class Tile extends GameObject {
 }
 
 export class Soil extends Tile {
+    humedo: boolean = false;
+    planta: Crop | null = null;
+    private intervalId: number | null = null;
+    private dryIntervalId: number | null = null;
+    private static readonly DRY_TIME: number = 20000;
     constructor(size: number, x: number = 0, y: number = 0) {
         super('soil', 0xB58C00, size, x, y);
         this.sprite!.zIndex = -12;
+        loadCropSprites();
+    }
+    humedecer(): void {
+        this.humedo = true;
+        this.color = 0x826400;
+        this.startDryTimer();
+        if (this.sprite) {
+            this.sprite.clear();
+            this.sprite.rect(0, 0, this.size, this.size);
+            this.sprite.fill(this.color);
+            this.sprite.stroke({ width: 1, color: this.color });
+        }
+    }
+    private startDryTimer(): void {
+        if (this.dryIntervalId !== null) {
+            clearTimeout(this.dryIntervalId);
+        }
+        this.dryIntervalId = window.setTimeout(() => {
+            this.secarse();
+        }, Soil.DRY_TIME);
+    }
+    private secarse(): void {
+        if (this.planta && !this.planta.isReady) {
+            this.planta?.destroy();
+            this.planta = null;
+            this.destroyPlantSprite();
+        }
+        this.humedo = false;
+        this.color = 0xB58C00;
+        if (this.sprite) {
+            this.sprite.clear();
+            this.sprite.rect(0, 0, this.size, this.size);
+            this.sprite.fill(this.color);
+            this.sprite.stroke({ width: 1, color: this.color });
+        }
+        if (this.intervalId !== null) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+        }
+    }
+    plantar(tipo: CropType): void {
+        if (this.humedo && !this.planta) {
+            this.planta = new Crop(tipo);
+            this.createPlantSprite();
+            this.planta.startGrowth();
+            this.startUpdating();
+        }
+    }
+    private startUpdating(): void {
+        this.intervalId = window.setInterval(() => {
+            this.updatePlantSprite();
+        }, 1000);
+    }
+    actualizar(): void {
+        if (this.planta) {
+            this.planta.update(1/60);
+            this.updatePlantSprite();
+        }
+    }
+    harvest(): { id: string; name: string; value: number } | null {
+        if (this.planta && this.planta.isReady) {
+            const result = this.planta.harvest();
+            this.planta?.destroy();
+            this.planta = null;
+            if (this.intervalId !== null) {
+                clearInterval(this.intervalId);
+                this.intervalId = null;
+            }
+            if (this.dryIntervalId !== null) {
+                clearTimeout(this.dryIntervalId);
+                this.dryIntervalId = null;
+            }
+            this.destroyPlantSprite();
+            return result;
+        }
+        return null;
+    }
+
+    esPlantaLista(): boolean {
+        return this.planta !== null && this.planta.isReady;
+    }
+    tienePlanta(): boolean {
+        return this.planta !== null;
+    }
+    private createPlantSprite(): void {
+        if (!this.planta || !this.planta.hasSprite()) return;
+        const frame = this.planta.getSpriteFrame();
+        if (frame === null) return;
+        const texture = cropTextures.get(`frame_${frame}`);
+        if (!texture) return;
+        this.plantSprite = new PIXI.Sprite(texture);
+        this.plantSprite.scale.set(this.size / 16);
+        this.plantSprite.texture.source.scaleMode = 'nearest';
+        this.plantSprite.x = this.sprite!.x;
+        this.plantSprite.y = this.sprite!.y;
+        this.plantSprite.zIndex = 0;
+        game.addVisually(this.plantSprite);
+    }
+    private updatePlantSprite(): void {
+        if (!this.planta || !this.plantSprite || !this.planta.hasSprite()) return;
+        const frame = this.planta.getSpriteFrame();
+        if (frame === null) return;
+        const texture = cropTextures.get(`frame_${frame}`);
+        if (texture) {
+            this.plantSprite.texture = texture;
+        }
+    }
+    private destroyPlantSprite(): void {
+        if (this.plantSprite) {
+            this.plantSprite.destroy();
+            this.plantSprite = null;
+        }
     }
 }
 
@@ -95,16 +232,16 @@ export class Terrain extends GameObject {
         this.tiles[row][col] = newTile;
     }
 
-    convertToWetSoil(pos: Vector2D): void {
-        const col = Math.floor(pos.x / this.tileSize);
-        const row = Math.floor(pos.y / this.tileSize);
-        if (row < 0 || row >= this.height || col < 0 || col >= this.width) return;
-        if (this.tiles[row][col].type !== 'soil') return;
+    // convertToWetSoil(pos: Vector2D): void {
+    //     const col = Math.floor(pos.x / this.tileSize);
+    //     const row = Math.floor(pos.y / this.tileSize);
+    //     if (row < 0 || row >= this.height || col < 0 || col >= this.width) return;
+    //     if (this.tiles[row][col].type !== 'soil') return;
 
-        this.tiles[row][col].destroy();
-        const newTile = new WetSoil(this.tileSize, col, row);
-        this.tiles[row][col] = newTile;
-    }
+    //     this.tiles[row][col].destroy();
+    //     const newTile = new WetSoil(this.tileSize, col, row);
+    //     this.tiles[row][col] = newTile;
+    // }
 
     getGridPosition(pos: Vector2D): Vector2D {
         return new Vector2D(

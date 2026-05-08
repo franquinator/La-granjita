@@ -1,6 +1,5 @@
 import * as PIXI from 'pixi.js';
 import { game } from './Game';
-import { Vector2D } from './types';
 import { Player } from './Player';
 
 export abstract class Item {

@@ -5,6 +5,7 @@ import { Marco } from './Marco.js';
 import { GameObject } from './GameObject.js';
 import { Terrain } from './Terrain.js';
 import { UI } from './UI.js';
+import { Inventory } from './Inventory.js';
 
 export class Game {
     app: PIXI.Application | null = null;
@@ -12,7 +13,7 @@ export class Game {
     container: PIXI.Container | null = null;
     marco: Marco = new Marco(50);;
     terrain: Terrain = new Terrain(25, 12, 50);
-    updateGameObjects: GameObject[] = [];
+    updateGameObjects: Set<GameObject> = new Set();
     money: number = 0;
     player: Player = new Player({ width: 40, height: 40, color: 0xff6b6b, speed: 300 });
     ui: UI = new UI();
@@ -36,6 +37,8 @@ export class Game {
 
         this.marco.init();
         this.player.init();
+        this.player.setInventory(new Inventory(20));
+        this.player.addMoney(50);
         this.terrain.init();
         this.ui.init();
         
@@ -47,7 +50,11 @@ export class Game {
     }
 
     addToUpdate(obj: GameObject): void {
-        this.updateGameObjects.push(obj);
+        this.updateGameObjects.add(obj);
+    }
+
+    removeFromUpdate(obj: GameObject): void {
+        this.updateGameObjects.delete(obj);
     }
 
     addVisually(sprite: PIXI.Container | null): void {
@@ -58,9 +65,7 @@ export class Game {
     }
 
     update(delta: number): void {
-        this.updateGameObjects.forEach(gameObject => {
-            gameObject.update(delta, this);
-        });
+        this.updateGameObjects.forEach(gameObject => gameObject.update(delta, this));
     }
 
     getObjectAt(x: number, y: number, range: number = 50): GameObject | null {

@@ -3,7 +3,6 @@ import { GameObject } from './GameObject.js';
 import { Inventory } from './Inventory.js';
 import { Vector2D } from './types.js';
 import { game } from './Game.js';
-import { Tile } from './Terrain.js';
 
 
 export interface PlayerOptions {
@@ -102,13 +101,24 @@ export class Player extends GameObject {
 
         this.toolPosition = game.terrain.getTilePosition(this.toolPosition)
 
-        const herramienta = game.ui.toolbar.getSelectedItem();
+        const herramienta = game.ui.getSelectedItem();
 
         if(herramienta){
             herramienta.ejecutarComportamientoDesde(this);
         } 
         else {
-            game.marco.setVisibility(false);
+            const interactable = this.findInteractable();
+            if (interactable && 'onInteract' in interactable) {
+                game.marco.setPosition(interactable.x, interactable.y);
+                game.marco.setColor(0x00ff00);
+                game.marco.setVisibility(true);
+                if (input.isDown('Space')) {
+                    (interactable as any).onInteract(this);
+                    input.keys['Space'] = false;
+                }
+            } else {
+                game.marco.setVisibility(false);
+            }
         }
 
 
@@ -127,11 +137,20 @@ export class Player extends GameObject {
 
 
 
+        // Teclas 1-4 seleccionan los últimos 4 slots (hotbar: 12-15)
         for (let i = 0; i < 4; i++) {
             if (input.isDown(`Digit${i + 1}`)) {
-                game.ui.toolbar.selectSlot(i);
+                game.ui.selectSlot(12 + i);
                 input.keys[`Digit${i + 1}`] = false;
             }
+        }
+
+        if (input.isDown('KeyQ')) {
+            const item = game.ui.getSelectedItem();
+            if (item && 'cycleNextType' in item && typeof item.cycleNextType === 'function') {
+                item.cycleNextType();
+            }
+            input.keys['KeyQ'] = false;
         }
 
 
@@ -163,11 +182,13 @@ export class Player extends GameObject {
 
     addMoney(amount: number): void {
         this.money += amount;
+        game.ui.updateMoney(this.money);
     }
 
     spendMoney(amount: number): boolean {
         if (this.money >= amount) {
             this.money -= amount;
+            game.ui.updateMoney(this.money);
             return true;
         }
         return false;
@@ -181,6 +202,20 @@ export class Player extends GameObject {
         if (!this.sprite) return;
         this.sprite.x = Math.min(Math.max(this.sprite.x, 0), screenWidth - this.width);
         this.sprite.y = Math.min(Math.max(this.sprite.y, 0), screenHeight - this.height);
+    }
+
+    private findInteractable(): any {
+        const range = 60;
+        for (const obj of game.updateGameObjects) {
+            if (obj === this) continue;
+            if (!obj.isInteractive) continue;
+            const dx = Math.abs(this.position.x - obj.x);
+            const dy = Math.abs(this.position.y - obj.y);
+            if (dx < range && dy < range) {
+                return obj;
+            }
+        }
+        return null;
     }
 
     get x(): number { return this.sprite?.x ?? 0; }
