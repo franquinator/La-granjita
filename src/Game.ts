@@ -8,7 +8,7 @@ import { UI } from './UI.js';
 
 export class Game {
     app: PIXI.Application | null = null;
-    input: Input | null = null;
+    input: Input = new Input();
     container: PIXI.Container | null = null;
     marco: Marco = new Marco(50);;
     terrain: Terrain = new Terrain(25, 12, 50);
@@ -33,8 +33,6 @@ export class Game {
 
         this.container = new PIXI.Container();
         this.app.stage.addChild(this.container);
-
-        this.input = new Input();
 
         this.marco.init();
         this.player.init();

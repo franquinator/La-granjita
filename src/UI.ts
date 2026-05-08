@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import { GameObject } from './GameObject.js';
 import { Item } from './Item.js';
 import { game } from './Game.js';
+import * as Tools from './Tools.js';
 
 export class UI extends GameObject {
     initialized: boolean = false;
@@ -18,8 +19,12 @@ export class UI extends GameObject {
     async createSprite(): Promise<void> {
         this.uiContainer.zIndex = 100;
         this.toolbar.init();
-        await this.toolbar.agregarItem(0, new Item('Pala', 'pala'));
-        await this.toolbar.agregarItem(1, new Item('Regadera', 'regadera'));
+/*         this.toolbar.onUse = () => {
+            return this.toolbar.getSelectedItem();
+        }; */
+        await this.toolbar.addItem_ToSlot_(new Tools.Pala(),0);
+        await this.toolbar.addItem_ToSlot_(new Tools.Regadera(),1);
+        //await this.toolbar.addItem_ToSlot_(new Item('Regadera', 'regadera'),1);
         this.uiContainer.addChild(this.toolbar.container);
         this.sprite = this.uiContainer as unknown as PIXI.Graphics;
     }
@@ -36,6 +41,7 @@ class Toolbar {
     selectedSlot: Slot | null = null;
     squareSize: number = 60;
     gap: number = 10;
+    onUse: (() => Item) | null = null;
 
     init(): void {
         const totalWidth = this.squareSize * 4 + this.gap * 3;
@@ -58,18 +64,17 @@ class Toolbar {
         this.container.addChild(this.selector);
     }
 
-    async agregarItem(slot: number, item: Item): Promise<void> {
+    async addItem_ToSlot_(item: Item,slot: number): Promise<void> {
         if (slot < 0 || slot >= this.slots.length) return;
         await this.slots[slot].setItem(item);
     }
 
-    getSelecteItem(): string{
-        if (this.selectedSlot == null) return "";
-        if (this.selectedSlot.item == null)return "";
-        return this.selectedSlot.item.name;
+    getSelectedItem(): Item | null {
+        if (this.selectedSlot == null) return null;
+        return this.selectedSlot.item;
     }
 
-    marcarSlot(nroSlot: number): void {
+    selectSlot(nroSlot: number): void {
         if (nroSlot < 0 || nroSlot >= this.slots.length) return;
 
         this.selectedSlot = this.slots[nroSlot];
@@ -77,7 +82,7 @@ class Toolbar {
         this.selector.visible = true;
     }
 
-    desmarcarSlot(): void {
+    deselectSlot(): void {
         this.selectedSlot = null;
         this.selector.visible = false;
     }

@@ -3,6 +3,7 @@ import { GameObject } from './GameObject.js';
 import { Inventory } from './Inventory.js';
 import { Vector2D } from './types.js';
 import { game } from './Game.js';
+import { Tile } from './Terrain.js';
 
 
 export interface PlayerOptions {
@@ -19,8 +20,9 @@ export class Player extends GameObject {
     speed: number;
     direction: Vector2D = new Vector2D(0, 0);
     position: Vector2D = new Vector2D(0, 0);
+    toolPosition: Vector2D = new Vector2D(0, 0);
     lastDirection: Vector2D = new Vector2D(0, 0);
-    newSprite: PIXI.Graphics | null = null;
+    toolSprite: PIXI.Graphics | null = null;
     money: number = 0;
     inventory: Inventory | null = null;
 
@@ -45,11 +47,11 @@ export class Player extends GameObject {
         this.sprite.fill(this.color);
         this.sprite.pivot.set(this.width / 2, this.width / 2);
 
-        this.newSprite = new PIXI.Graphics();
-        this.newSprite.zIndex = 2;
-        this.newSprite.rect(0, 0, 10, 10);
-        this.newSprite.fill(this.color);
-        this.newSprite.pivot.set(5, 5);
+        this.toolSprite = new PIXI.Graphics();
+        this.toolSprite.zIndex = 2;
+        this.toolSprite.rect(0, 0, 10, 10);
+        this.toolSprite.fill(this.color);
+        this.toolSprite.pivot.set(5, 5);
 
 
 
@@ -63,7 +65,7 @@ export class Player extends GameObject {
         game.addVisually(this.sprite);
         game.addToUpdate(this);
 
-        game.app?.stage.addChild(this.newSprite!);
+        game.app?.stage.addChild(this.toolSprite!);
 
     }
 
@@ -93,32 +95,41 @@ export class Player extends GameObject {
             this.lastDirection = this.direction.clone();
         }
 
-        var posDondeVaAIr: Vector2D = this.position.add(this.lastDirection.mult(30))
+        this.toolPosition = this.position.add(this.lastDirection.mult(30))
 
-        this.newSprite!.x = posDondeVaAIr.x;
-        this.newSprite!.y = posDondeVaAIr.y;
+        this.toolSprite!.x = this.toolPosition.x;
+        this.toolSprite!.y = this.toolPosition.y;
 
-        posDondeVaAIr = game.terrain.getTilePosition(posDondeVaAIr)
+        this.toolPosition = game.terrain.getTilePosition(this.toolPosition)
 
-        if (game.ui.toolbar.getSelecteItem() == "Pala") {
-            game.marco.setPosition(posDondeVaAIr.x, posDondeVaAIr.y);
+        const herramienta = game.ui.toolbar.getSelectedItem();
 
-            if (input.isDown('Space')) {
-                //this.interact(game);
-                game.terrain.convertToSoil(posDondeVaAIr)
-                input.keys['Space'] = false;
-            }
-            game.marco.setVisibility(true);
-        }
-        else{
+        if(herramienta){
+            herramienta.ejecutarComportamientoDesde(this);
+        } 
+        else {
             game.marco.setVisibility(false);
         }
+
+
+        /*         if () {
+                    game.marco.setPosition(posDondeVaAIr.x, posDondeVaAIr.y);
+        
+                    if (input.isDown('Space')) {
+                        game.terrain.convertToSoil(posDondeVaAIr)
+                        input.keys['Space'] = false;
+                    }
+                    game.marco.setVisibility(true);
+                }
+                else {
+                    game.marco.setVisibility(false);
+                } */
 
 
 
         for (let i = 0; i < 4; i++) {
             if (input.isDown(`Digit${i + 1}`)) {
-                game.ui.toolbar.marcarSlot(i);
+                game.ui.toolbar.selectSlot(i);
                 input.keys[`Digit${i + 1}`] = false;
             }
         }

@@ -4,7 +4,6 @@ import { game } from './Game.js';
 
 export class Marco extends GameObject {
     size: number;
-    color: number = 0xffff00;
     initialized: boolean = false;
 
     constructor(size: number) {
@@ -23,7 +22,7 @@ export class Marco extends GameObject {
         this.sprite = new PIXI.Graphics();
         
         this.sprite.rect(0, 0, this.size, this.size);
-        this.sprite.stroke({ width: 2, color: this.color });
+        this.sprite.stroke({ width: 2, color: 0xffffff});
         
         this.sprite.zIndex = 0;
     }
@@ -36,6 +35,10 @@ export class Marco extends GameObject {
 
     setVisibility(condition : boolean): void{
         this.sprite!.visible = condition;
+    }
+
+    setColor(color:number): void {
+        this.sprite!.tint = color;
     }
 
     setPosition(x: number, y: number): void {

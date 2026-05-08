@@ -39,9 +39,15 @@ export class Tile extends GameObject {
 
 export class Soil extends Tile {
     constructor(size: number, x: number = 0, y: number = 0) {
-        super('soil', 0xB58C00, size,x,y);
-        this.sprite!.zIndex = -12
+        super('soil', 0xB58C00, size, x, y);
+        this.sprite!.zIndex = -12;
+    }
+}
 
+export class WetSoil extends Tile {
+    constructor(size: number, x: number = 0, y: number = 0) {
+        super('wetSoil', 0x826400, size, x, y);
+        this.sprite!.zIndex = -12;
     }
 }
 
@@ -89,6 +95,17 @@ export class Terrain extends GameObject {
         this.tiles[row][col] = newTile;
     }
 
+    convertToWetSoil(pos: Vector2D): void {
+        const col = Math.floor(pos.x / this.tileSize);
+        const row = Math.floor(pos.y / this.tileSize);
+        if (row < 0 || row >= this.height || col < 0 || col >= this.width) return;
+        if (this.tiles[row][col].type !== 'soil') return;
+
+        this.tiles[row][col].destroy();
+        const newTile = new WetSoil(this.tileSize, col, row);
+        this.tiles[row][col] = newTile;
+    }
+
     getGridPosition(pos: Vector2D): Vector2D {
         return new Vector2D(
             Math.floor(pos.x / this.tileSize),
@@ -98,5 +115,11 @@ export class Terrain extends GameObject {
         return new Vector2D(
             Math.floor(pos.x / this.tileSize)*this.tileSize,
             Math.floor(pos.y / this.tileSize)*this.tileSize);
+    }
+    getTileAtPosition(pos: Vector2D): Tile | null{
+        const col = Math.floor(pos.x / this.tileSize);
+        const row = Math.floor(pos.y / this.tileSize);
+        if (row < 0 || row >= this.height || col < 0 || col >= this.width) return null;
+        return this.tiles[row][col];
     }
 }
