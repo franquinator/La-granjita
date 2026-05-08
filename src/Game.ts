@@ -5,7 +5,6 @@ import { Marco } from './Marco.js';
 import { GameObject } from './GameObject.js';
 import { Terrain } from './Terrain.js';
 import { UI } from './UI.js';
-import { Inventory } from './Inventory.js';
 
 export class Game {
     app: PIXI.Application | null = null;
@@ -37,7 +36,6 @@ export class Game {
 
         this.marco.init();
         this.player.init();
-        this.player.setInventory(new Inventory(20));
         this.player.addMoney(50);
         this.terrain.init();
         this.ui.init();

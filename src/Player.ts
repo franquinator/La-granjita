@@ -1,6 +1,5 @@
 import * as PIXI from 'pixi.js';
 import { GameObject } from './GameObject.js';
-import { Inventory } from './Inventory.js';
 import { Vector2D } from './types.js';
 import { game } from './Game.js';
 
@@ -23,7 +22,6 @@ export class Player extends GameObject {
     lastDirection: Vector2D = new Vector2D(0, 0);
     toolSprite: PIXI.Graphics | null = null;
     money: number = 0;
-    inventory: Inventory | null = null;
 
     constructor(options: PlayerOptions = {}) {
         super();
@@ -38,7 +36,6 @@ export class Player extends GameObject {
         this.zIndex = 10;
 
         this.money = 0;
-        this.inventory = null;
 
         this.sprite = new PIXI.Graphics();
         this.sprite.zIndex = 1;
@@ -66,10 +63,6 @@ export class Player extends GameObject {
 
         game.app?.stage.addChild(this.toolSprite!);
 
-    }
-
-    setInventory(inventory: Inventory): void {
-        this.inventory = inventory;
     }
 
     update(delta: number): void {
@@ -101,7 +94,7 @@ export class Player extends GameObject {
 
         this.toolPosition = game.terrain.getTilePosition(this.toolPosition)
 
-        const herramienta = game.ui.getSelectedItem();
+        const herramienta = game.ui.inventoryUI.getSelectedItem();
 
         if(herramienta){
             herramienta.ejecutarComportamientoDesde(this);
@@ -140,17 +133,9 @@ export class Player extends GameObject {
         // Teclas 1-4 seleccionan los últimos 4 slots (hotbar: 12-15)
         for (let i = 0; i < 4; i++) {
             if (input.isDown(`Digit${i + 1}`)) {
-                game.ui.selectSlot(12 + i);
+                game.ui.inventoryUI.selectSlot(12 + i);
                 input.keys[`Digit${i + 1}`] = false;
             }
-        }
-
-        if (input.isDown('KeyQ')) {
-            const item = game.ui.getSelectedItem();
-            if (item && 'cycleNextType' in item && typeof item.cycleNextType === 'function') {
-                item.cycleNextType();
-            }
-            input.keys['KeyQ'] = false;
         }
 
 
@@ -182,13 +167,13 @@ export class Player extends GameObject {
 
     addMoney(amount: number): void {
         this.money += amount;
-        game.ui.updateMoney(this.money);
+        game.ui.moneyUI.update(this.money);
     }
 
     spendMoney(amount: number): boolean {
         if (this.money >= amount) {
             this.money -= amount;
-            game.ui.updateMoney(this.money);
+            game.ui.moneyUI.update(this.money);
             return true;
         }
         return false;

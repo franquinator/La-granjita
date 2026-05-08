@@ -72,16 +72,16 @@ export class FarmPlot extends GameObject {
     onInteract(player: Player, _game: Game): void {
         if (!this.crop) {
             const seedTypes: CropType[] = ['wheat', 'corn', 'tomato'];
-            const hasSeeds = seedTypes.some(seed => player.inventory?.hasItem(seed));
+/*             const hasSeeds = seedTypes.some(seed => player.inventory?.hasItem(seed));
 
-            if (hasSeeds && player.inventory) {
+            if (hasSeeds && _game.ui.inventory) {
                 const seeds = player.inventory.items.find(i => seedTypes.includes(i.id as CropType));
                 if (seeds) {
                     player.inventory.removeItem(seeds.id, 1);
                     this.crop = new Crop(seeds.id as CropType);
                     this.drawCrop();
                 }
-            }
+            } */
         } else if (this.crop.isReady) {
             const harvested = this.crop.harvest();
             if (harvested) {
