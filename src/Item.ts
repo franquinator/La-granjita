@@ -21,14 +21,5 @@ export abstract class Item {
     }
 
     abstract useFor(player: Player): void;
-    abstract ejecutarComportamientoDelMarco(player: Player): void;
-
-    ejecutarComportamientoDesde(player: Player) {
-        this.ejecutarComportamientoDelMarco(player);
-
-        if (game.input.isDown('Space')) {
-            this.useFor(player);
-            game.input!.keys['Space'] = false;
-        }
-    }
+    abstract updateFor(player: Player): void;
 }

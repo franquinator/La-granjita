@@ -22,6 +22,7 @@ export class Player extends GameObject {
     lastDirection: Vector2D = new Vector2D(0, 0);
     toolSprite: PIXI.Graphics | null = null;
     money: number = 0;
+    private interact: () => void;
 
     constructor(options: PlayerOptions = {}) {
         super();
@@ -49,8 +50,12 @@ export class Player extends GameObject {
         this.toolSprite.fill(this.color);
         this.toolSprite.pivot.set(5, 5);
 
-
-
+        this.interact = () => {
+            const herramienta = game.ui.inventoryUI.getSelectedItem();
+            if(herramienta){
+                herramienta.useFor(this);
+            }
+        };
 
         this.updatePosition();
 
@@ -63,6 +68,11 @@ export class Player extends GameObject {
 
         game.app?.stage.addChild(this.toolSprite!);
 
+        game.input.subscribe(this.interact, ['Space']);
+        game.input.subscribe(() => game.ui.inventoryUI.selectSlot(12), ['Digit1']);
+        game.input.subscribe(() => game.ui.inventoryUI.selectSlot(13), ['Digit2']);
+        game.input.subscribe(() => game.ui.inventoryUI.selectSlot(14), ['Digit3']);
+        game.input.subscribe(() => game.ui.inventoryUI.selectSlot(15), ['Digit4']);
     }
 
     update(delta: number): void {
@@ -97,53 +107,13 @@ export class Player extends GameObject {
         const herramienta = game.ui.inventoryUI.getSelectedItem();
 
         if(herramienta){
-            herramienta.ejecutarComportamientoDesde(this);
+            herramienta.updateFor(this);
         } 
         else {
-            const interactable = this.findInteractable();
-            if (interactable && 'onInteract' in interactable) {
-                game.marco.setPosition(interactable.x, interactable.y);
-                game.marco.setColor(0x00ff00);
-                game.marco.setVisibility(true);
-                if (input.isDown('Space')) {
-                    (interactable as any).onInteract(this);
-                    input.keys['Space'] = false;
-                }
-            } else {
-                game.marco.setVisibility(false);
-            }
+            game.marco.setVisibility(false);
         }
-
-
-        /*         if () {
-                    game.marco.setPosition(posDondeVaAIr.x, posDondeVaAIr.y);
         
-                    if (input.isDown('Space')) {
-                        game.terrain.convertToSoil(posDondeVaAIr)
-                        input.keys['Space'] = false;
-                    }
-                    game.marco.setVisibility(true);
-                }
-                else {
-                    game.marco.setVisibility(false);
-                } */
-
-
-
-        // Teclas 1-4 seleccionan los últimos 4 slots (hotbar: 12-15)
-        for (let i = 0; i < 4; i++) {
-            if (input.isDown(`Digit${i + 1}`)) {
-                game.ui.inventoryUI.selectSlot(12 + i);
-                input.keys[`Digit${i + 1}`] = false;
-            }
-        }
-
-
-
-
-
         this.updatePosition()
-        //marco.setPosition((this.sprite?.x ?? 0) - 5, (this.sprite?.y ?? 0) - 5);
     }
 
     /*     interact(game: Game): void {
@@ -189,7 +159,7 @@ export class Player extends GameObject {
         this.sprite.y = Math.min(Math.max(this.sprite.y, 0), screenHeight - this.height);
     }
 
-    private findInteractable(): any {
+/*     private findInteractable(): any {
         const range = 60;
         for (const obj of game.updateGameObjects) {
             if (obj === this) continue;
@@ -201,7 +171,7 @@ export class Player extends GameObject {
             }
         }
         return null;
-    }
+    } */
 
     get x(): number { return this.sprite?.x ?? 0; }
     get y(): number { return this.sprite?.y ?? 0; }

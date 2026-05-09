@@ -14,7 +14,7 @@ export class Pala extends Item {
         game.terrain.convertToSoil(player.toolPosition);
     }
 
-    ejecutarComportamientoDelMarco(player: Player) {
+    updateFor(player: Player) {
         game.marco.setColor(0xffff00);
         game.marco.setVisibility(true);
         game.marco.setPosition(player.toolPosition.x, player.toolPosition.y);
@@ -34,7 +34,7 @@ export class Regadera extends Item {
         }
     }
 
-    ejecutarComportamientoDelMarco(player: Player) {
+    updateFor(player: Player) {
         const tileActual = game.terrain.getTileAtPosition(player.toolPosition);
         if (tileActual instanceof Soil && !tileActual.humedo) {
             game.marco.setColor(0x0000ff);
@@ -92,7 +92,7 @@ export class Semillas extends Item {
         }
     }
 
-    ejecutarComportamientoDelMarco(player: Player): void {
+    updateFor(player: Player): void {
         const tile = game.terrain.getTileAtPosition(player.toolPosition);
         if (tile instanceof Soil && tile.humedo && !tile.tienePlanta()) {
             game.marco.setColor(0x00ff00);
@@ -119,7 +119,7 @@ export class Cosecha extends Item {
         }
     }
 
-    ejecutarComportamientoDelMarco(player: Player): void {
+    updateFor(player: Player): void {
         const tile = game.terrain.getTileAtPosition(player.toolPosition);
         if (tile instanceof Soil && tile.esPlantaLista()) {
             game.marco.setColor(0x00ff00);

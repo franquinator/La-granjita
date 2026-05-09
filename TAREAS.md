@@ -1,94 +1,54 @@
 # Tareas del Proyecto - La Granjita
 
-## Estado Actual
-- Jugador puede moverse (WASD/flechas)
-- Pala convierte Pasture → Soil
-- Regadera humedece Soil (cambia color)
-- Semillas plantan frutilla en Soil húmedo
-- Frutilla crece automáticamente con timer interno (1 seg = 1 tick)
-- Toolbar con 3 items (Pala, Regadera, Semillas)
-- Marco visual que indica acción válida (verde) o inválida (rojo)
+## Estado Actual (IMPLEMENTADO)
+
+### Controles
+- **WASD / Flechas**: Mover jugador
+- **1-3**: Seleccionar item de toolbar
+- **Q**: Cambiar tipo de semilla (cycle)
+- **Space**: Usar item seleccionado
+
+### Sistema de Juego
+- ✅ Jugador puede moverse por el mapa
+- ✅ **Pala** convierte Pasture → Soil (Marco amarillo)
+- ✅ **Regadera** humedece Soil (Marco azul si seco, rojo si ya húmedo)
+- ✅ **Semillas** planta frutilla en Soil húmedo (Marco verde)
+- ✅ Frutilla crece automáticamente con timer interno (1 seg = 1 tick)
+- ✅ Marco visual: verde=válido, rojo=inválido, azul=para regar, amarillo=para pala
+- ✅ **Soil se seca** después de ~30 segundos
+- ✅ **Inventory** funciona (conectado al player)
+
+### UI
+- ✅ Toolbar con 3 items (Pala, Regadera, Semillas)
+- ✅ Las semillas usan frame 6 del spritesheet
+- ✅ Pixel art con scaleMode='nearest'
+
+### Terrain
+- ✅ Pasture (verde) - tierra default
+- ✅ Soil (café) - tierra arada
+- ✅ Soil húmedo (café oscuro) - regado
+- ✅ Las Soil tienen planta integrada (no FarmPlot)
+- ✅ Sistema de harvest implementado
+- ✅ Timer independiente para crecimiento
 
 ---
 
-## Tareas Pendientes
+## Archivos Principales
 
-### AGENTE 1: Sistema de Inventory y Compras
-
-1. **Inventory del jugador**
-   - Implementar sistema de inventario (ya existe clase Inventory.ts)
-   - Mostrar items en UI
-   - Agregar/quitar items
-
-2. **Tienda para comprar semillas**
-   - Crear building/shop donde comprar items
-   - Comprar semillas (wheat, corn, tomato, strawberry)
-   - Deducir dinero del jugador
-
-3. **Semillas en inventory**
-   - Las semillas bought deben aparecer en inventory
-   - Poder seleccionar qué semilla plantar
-
-4. **Sistema de dinero**
-   - Mostrar dinero en UI
-   - Ganar dinero al vender cosechas
-
-
-### AGENTE 2: Cosecha y Expansión de Cultivos
-
-5. **Cosecha de plantas**
-   - Al interactuar con planta lista, recolectar
-   - Agregar producto al inventory
-   - Ganar dinero al vender
-
-6. **Más tipos de cultivos**
-   - Agregar sprites para wheat, corn, tomato
-   - Cada uno con diferente growTime y sellPrice
-   - Poder plantar diferentes semillas
-
-7. **Soil se seca**
-   - Después de un tiempo, soil húmedo vuelve a secarse
-   - Necesita regarse de nuevo para mantener planta
-
-8. **Animales (ya existe Animal.ts)**
-   - Gallinas que producen huevos
-   - Vacas que producen leche
-   - Alimentar animales para que produzcan
-
----
-
-## Archivos Clave
-
-- `src/Game.ts` - Singleton del juego
-- `src/Terrain.ts` - Tile system (Soil, Pasture, etc.)
-- `src/Crop.ts` - Tipos de cultivos
-- `src/Tools.ts` - Herramientas/items
-- `src/UI.ts` - Interfaz de usuario
-- `src/Inventory.ts` - Sistema de inventario
-- `src/Player.ts` - Jugador
-- `src/Animal.ts` - Animales
-- `src/FarmPlot.ts` - Plots (actualmente no usado)
+| Archivo | Descripción |
+|---------|-------------|
+| `src/Game.ts` | Singleton, contiene terrain, player, ui |
+| `src/Terrain.ts` | Tile system: Pasture, Soil, WetSoil |
+| `src/Crop.ts` | Tipos de cultivos, crecimiento |
+| `src/Tools.ts` | Pala, Regadera, Semillas |
+| `src/UI.ts` | Toolbar |
+| `src/Inventory.ts` | Clase inventario |
+| `src/Player.ts` | Jugador, movement, toolPosition |
+| `src/Animal.ts` | Animales |
+| `src/Marco.ts` | Selector visual |
 
 ---
 
 ## Sprites Disponibles
-
-- `public/Spring Crops/Spring Crops.png` - Frames 0-6 para frutilla
+- `public/Spring Crops/Spring Crops.png` - 16x16, 7 frames (0-6)
 - `public/pala.png`, `public/regadera.png`, `public/semillas.png`
-
----
-
-## Notas Técnicas
-
-- Los cultivos usan `setInterval` interno para crecer (no depende de update loop)
-- El Marco usa color verde para acción válida, rojo para inválida
-- Los sprites de plantas usan `scaleMode = 'nearest'` para pixel art
-- La toolbar usa teclas 1-4 para seleccionar items
-- Space para usar el item seleccionado
-
----
-
-## Orden Sugerido
-
-1. Agent 1: Inventory → Tienda → Semillas comprables
-2. Agent 2: Cosecha → Más cultivos → Animales
