@@ -3,6 +3,7 @@ import { Item } from './Item.js';
 import { game } from './Game.js';
 import * as Tools from './Tools.js';
 
+// ============== TEXTURAS ==============
 let cropTextures: Map<string, PIXI.Texture> = new Map();
 let toolbarSpritesLoaded = false;
 
@@ -21,6 +22,55 @@ async function loadToolbarCropSprites(): Promise<void> {
     }
 }
 
+// ============== SLOTS ==============
+class InventorySlot {
+    container: PIXI.Container = new PIXI.Container();
+    background: PIXI.Graphics = new PIXI.Graphics();
+    itemSprite: PIXI.Sprite | null = null;
+    item: Item | null = null;
+    slotIndex: number = 0;
+    size: number = 60;
+
+    constructor(slotSize: number) {
+        this.size = slotSize;
+        this.background.rect(0, 0, slotSize, slotSize);
+        this.background.fill({ color: 0x444444 });
+        this.background.stroke({ width: 1, color: 0x666666 });
+        this.container.addChild(this.background);
+    }
+
+    async setItem(item: Item): Promise<void> {
+        this.clear();
+        this.item = item;
+        const sprite = await item.createSprite();
+        this.itemSprite = sprite;
+        this.itemSprite.zIndex = 10;
+        this.itemSprite.x = (this.size - sprite.width) / 2;
+        this.itemSprite.y = (this.size - sprite.height) / 2;
+        this.container.addChild(this.itemSprite);
+    }
+
+    hasItem(): boolean {
+        return this.item !== null;
+    }
+
+    clear(): void {
+        if (this.itemSprite) {
+            this.container.removeChild(this.itemSprite);
+            this.itemSprite = null;
+        }
+        this.item = null;
+    }
+
+    getItemTexture(): PIXI.Texture | null {
+        if (this.item?.sprite) {
+            return this.item.sprite.texture;
+        }
+        return null;
+    }
+}
+
+// ============== INVENTORY UI ==============
 export class InventoryUI {
     container: PIXI.Container = new PIXI.Container();
     slots: InventorySlot[] = [];
@@ -28,17 +78,29 @@ export class InventoryUI {
     selectedSlotIndex: number = 0;
     HOTBAR_START_INDEX = 12;
     
+    private background: PIXI.Graphics | null = null;
+    private title: PIXI.Text | null = null;
     private draggingSlotIndex: number = -1;
     private draggingSprite: PIXI.Sprite | null = null;
-    private isDraggingPanel: boolean = false;
-    private dragOffset: { x: number; y: number } = { x: 0, y: 0 };
+    private expanded: boolean = true;
 
     async init(): Promise<void> {
+        this.createContainer();
+        this.createBackground();
+        this.createSlots();
+        this.createSelector();
+        this.loadItems();
+        this.setupDrag();
+        game.input.subscribe(() => this.toggleExpanded(), ['KeyI']);
+    }
+
+    private createContainer(): void {
         this.container.zIndex = 100;
         this.container.eventMode = 'static';
         this.container.sortableChildren = true;
-        
-        // Fondo (4x4 = 16 slots)
+    }
+
+    private createBackground(): void {
         const cols = 4;
         const rows = 4;
         const slotSize = 60;
@@ -48,51 +110,53 @@ export class InventoryUI {
         const bgWidth = padding * 2 + cols * slotSize + (cols - 1) * gap;
         const bgHeight = 40 + rows * slotSize + (rows - 1) * gap;
         
-        const bg = new PIXI.Graphics();
-        bg.rect(0, 0, bgWidth, bgHeight);
-        bg.fill({ color: 0x2a2a2a, alpha: 0.95 });
-        bg.stroke({ width: 3, color: 0x888888 });
-        this.container.addChild(bg);
+        this.background = new PIXI.Graphics();
+        this.background.rect(0, 0, bgWidth, bgHeight);
+        this.background.fill({ color: 0x2a2a2a, alpha: 0.95 });
+        this.background.stroke({ width: 3, color: 0x888888 });
+        this.container.addChild(this.background);
         
-        // Título
-        const title = new PIXI.Text({
+        this.title = new PIXI.Text({
             text: 'INVENTARIO',
             style: { fontSize: 14, fill: 0xaaaaaa }
         });
-        title.x = padding;
-        title.y = 8;
-        this.container.addChild(title);
+        this.title.x = padding;
+        this.title.y = 8;
+        this.container.addChild(this.title);
 
-        // Crear 16 slots
-        for (let i = 0; i < cols * rows; i++) {
+        this.container.x = (game.app!.screen.width - bgWidth) / 2;
+        this.container.y = game.app!.screen.height - bgHeight - 20;
+    }
+
+    private createSlots(): void {
+        const slotSize = 60;
+        const gap = 8;
+        const padding = 15;
+
+        for (let i = 0; i < 16; i++) {
             const slot = new InventorySlot(slotSize);
-            slot.container.x = padding + (i % cols) * (slotSize + gap);
-            slot.container.y = 30 + Math.floor(i / cols) * (slotSize + gap);
+            slot.container.x = padding + (i % 4) * (slotSize + gap);
+            slot.container.y = 30 + Math.floor(i / 4) * (slotSize + gap);
             slot.slotIndex = i;
             this.slots.push(slot);
             this.container.addChild(slot.container);
         }
+    }
 
-        // Selector
+    private createSelector(): void {
+        const slotSize = 60;
         this.selector.rect(0, 0, slotSize, slotSize);
         this.selector.stroke({ width: 3, color: 0xffff00 });
         this.container.addChild(this.selector);
-        
-        // Posicionar
-        this.container.x = (game.app!.screen.width - bgWidth) / 2;
-        this.container.y = game.app!.screen.height - bgHeight - 20;
-        
-        // Cargar sprites y agregar herramientas
+    }
+
+    private async loadItems(): Promise<void> {
         await loadToolbarCropSprites();
-        
         await this.setSlotItem(12, new Tools.Pala());
         await this.setSlotItem(13, new Tools.Regadera());
         await this.setSlotItem(14, new Tools.Semillas(cropTextures));
         await this.setSlotItem(15, new Tools.Cosecha());
-        
         this.selectSlot(this.HOTBAR_START_INDEX);
-        
-        this.setupDrag();
     }
 
     private setupDrag(): void {
@@ -114,21 +178,13 @@ export class InventoryUI {
                     }
                 }
             }
-            
-            this.isDraggingPanel = true;
-            this.dragOffset.x = pos.x - this.container.x;
-            this.dragOffset.y = pos.y - this.container.y;
         });
 
         this.container.on('pointermove', (e: any) => {
             const pos = e.data.global;
-            
             if (this.draggingSprite) {
                 this.draggingSprite.x = pos.x;
                 this.draggingSprite.y = pos.y;
-            } else if (this.isDraggingPanel) {
-                this.container.x = pos.x - this.dragOffset.x;
-                this.container.y = pos.y - this.dragOffset.y;
             }
         });
 
@@ -136,12 +192,10 @@ export class InventoryUI {
             if (this.draggingSprite) {
                 this.handleDrop(e.data.global);
             }
-            this.isDraggingPanel = false;
             this.draggingSlotIndex = -1;
         });
 
         this.container.on('pointerupoutside', () => {
-            this.isDraggingPanel = false;
             this.draggingSlotIndex = -1;
         });
     }
@@ -228,53 +282,13 @@ export class InventoryUI {
     getAllItems(): Item[] {
         return this.slots.map(slot => slot.item).filter(item => item !== null) as Item[];
     }
-}
 
-class InventorySlot {
-    container: PIXI.Container = new PIXI.Container();
-    background: PIXI.Graphics = new PIXI.Graphics();
-    itemSprite: PIXI.Sprite | null = null;
-    item: Item | null = null;
-    slotIndex: number = 0;
-    size: number = 60;
-
-    constructor(slotSize: number) {
-        this.size = slotSize;
-        
-        this.background.rect(0, 0, slotSize, slotSize);
-        this.background.fill({ color: 0x444444 });
-        this.background.stroke({ width: 1, color: 0x666666 });
-        this.container.addChild(this.background);
-    }
-
-    async setItem(item: Item): Promise<void> {
-        this.clear();
-        this.item = item;
-        
-        const sprite = await item.createSprite();
-        this.itemSprite = sprite;
-        this.itemSprite.zIndex = 10;
-        this.itemSprite.x = (this.size - sprite.width) / 2;
-        this.itemSprite.y = (this.size - sprite.height) / 2;
-        this.container.addChild(this.itemSprite);
-    }
-
-    hasItem(): boolean {
-        return this.item !== null;
-    }
-
-    clear(): void {
-        if (this.itemSprite) {
-            this.container.removeChild(this.itemSprite);
-            this.itemSprite = null;
+    toggleExpanded(): void {
+        this.expanded = !this.expanded;
+        this.background!.visible = this.expanded;
+        this.title!.visible = this.expanded;
+        for (let i = 0; i < this.HOTBAR_START_INDEX; i++) {
+            this.slots[i].container.visible = this.expanded;
         }
-        this.item = null;
-    }
-
-    getItemTexture(): PIXI.Texture | null {
-        if (this.item?.sprite) {
-            return this.item.sprite.texture;
-        }
-        return null;
     }
 }
