@@ -1,4 +1,5 @@
-import { DroppedItem } from './DroppedItem.js';
+import * as PIXI from 'pixi.js';
+import { DroppedItem } from './DroppedItem';
 
 export class Celda {
     entidades: Set<DroppedItem> = new Set();
@@ -16,11 +17,56 @@ export class Celda {
     }
 }
 
+class DebugGrid {
+    graphics: PIXI.Graphics;
+    visible: boolean = false;
+
+    constructor() {
+        this.graphics = new PIXI.Graphics();
+        this.graphics.zIndex = 999;
+        this.graphics.visible = false;
+    }
+
+    toggle(): void {
+        this.visible = !this.visible;
+        this.graphics.visible = this.visible;
+    }
+
+    draw(anchoCelda: number, celdasAncho: number, celdasAlto: number): void {
+        if (!this.visible) return;
+        const g = this.graphics;
+        g.clear();
+        g.setStrokeStyle({ width: 1, color: 0xffffff, alpha: 0.3 });
+
+        const ancho = anchoCelda * celdasAncho;
+        const alto = anchoCelda * celdasAlto;
+
+        for (let x = 0; x <= celdasAncho; x++) {
+            const px = x * anchoCelda;
+            g.moveTo(px, 0);
+            g.lineTo(px, alto);
+        }
+        for (let y = 0; y <= celdasAlto; y++) {
+            const py = y * anchoCelda;
+            g.moveTo(0, py);
+            g.lineTo(ancho, py);
+        }
+        g.stroke();
+    }
+}
+
 export class Grilla {
     celdas: Map<string, Celda> = new Map();
     anchoCelda: number = 0;
     celdasAncho: number = 0;
     celdasAlto: number = 0;
+    graphics: PIXI.Graphics;
+    private debugGrid: DebugGrid;
+
+    constructor() {
+        this.graphics = new PIXI.Graphics();
+        this.debugGrid = new DebugGrid();
+    }
 
     init(ancho: number, alto: number, anchoCelda: number): void {
         this.anchoCelda = anchoCelda;
@@ -98,5 +144,11 @@ export class Grilla {
             }
         }
         return celdas;
+    }
+
+    toggleDebug(): void {
+        this.debugGrid.toggle();
+        this.debugGrid.draw(this.anchoCelda, this.celdasAncho, this.celdasAlto);
+        this.graphics.addChild(this.debugGrid.graphics);
     }
 }

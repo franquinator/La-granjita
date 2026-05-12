@@ -31,9 +31,7 @@ export class FarmPlot extends GameObject {
 
     drawPlot(): void {
         if (!this.sprite) return;
-        this.sprite.rect(0, 0, this.tileSize - 4, this.tileSize - 4);
-        this.sprite.fill(0x8b4513);
-        this.sprite.stroke({ width: 2, color: 0x5c4033 });
+        this.drawBase();
     }
 
     update(delta: number, _game: Game): void {
@@ -43,13 +41,18 @@ export class FarmPlot extends GameObject {
         }
     }
 
+    private drawBase(): void {
+        if (!this.sprite) return;
+        this.sprite.rect(0, 0, this.tileSize - 4, this.tileSize - 4);
+        this.sprite.fill(0x8b4513);
+        this.sprite.stroke({ width: 2, color: 0x5c4033 });
+    }
+
     drawCrop(): void {
         if (!this.sprite) return;
 
         this.sprite.clear();
-        this.sprite.rect(0, 0, this.tileSize - 4, this.tileSize - 4);
-        this.sprite.fill(0x8b4513);
-        this.sprite.stroke({ width: 2, color: 0x5c4033 });
+        this.drawBase();
 
         if (!this.crop) return;
 

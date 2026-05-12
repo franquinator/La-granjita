@@ -63,9 +63,6 @@ export class DroppedItem {
         if (this.inGrilla) {
             game.grillaItems.removerEntidad(this);
         }
-        const index = game.droppedItems.indexOf(this);
-        if (index > -1) {
-            game.droppedItems.splice(index, 1);
-        }
+        game.droppedItems.delete(this);
     }
 }

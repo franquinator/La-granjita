@@ -4,24 +4,13 @@ import { Player } from './Player';
 import { Item } from './Item';
 import { Soil } from './Terrain';
 import { CropType } from './Crop';
+import { loadCropTextures } from './CropTextures';
+import { Vector2D } from './types';
 
-let cropTexturesCache: Map<string, PIXI.Texture> | null = null;
-
-export async function loadCropTextures(): Promise<Map<string, PIXI.Texture>> {
-    if (cropTexturesCache) return cropTexturesCache;
-    const textures = new Map<string, PIXI.Texture>();
-    try {
-        const sheet = await PIXI.Assets.load<PIXI.Texture>('Spring Crops/Spring Crops.png');
-        for (let i = 0; i < 7; i++) {
-            const frame = new PIXI.Rectangle(i * 16, 0, 16, 16);
-            const texture = new PIXI.Texture({ source: sheet.source, frame });
-            textures.set(`frame_${i}`, texture);
-        }
-        cropTexturesCache = textures;
-    } catch (e) {
-        console.error('Error loading crop textures:', e);
-    }
-    return textures;
+function updateMarco(color: number, position: Vector2D): void {
+    game.marco.setColor(color);
+    game.marco.setVisibility(true);
+    game.marco.setPosition(position.x, position.y);
 }
 
 export class Pala extends Item {
@@ -34,9 +23,7 @@ export class Pala extends Item {
     }
 
     updateFor(player: Player) {
-        game.marco.setColor(0xffff00);
-        game.marco.setVisibility(true);
-        game.marco.setPosition(player.toolPosition.x, player.toolPosition.y);
+        updateMarco(0xffff00, player.toolPosition);
     }
 }
 
@@ -55,14 +42,8 @@ export class Regadera extends Item {
 
     updateFor(player: Player) {
         const tileActual = game.terrain.getTileAtPosition(player.toolPosition);
-        if (tileActual instanceof Soil && !tileActual.humedo) {
-            game.marco.setColor(0x0000ff);
-        }
-        else {
-            game.marco.setColor(0xff0000);
-        }
-        game.marco.setVisibility(true);
-        game.marco.setPosition(player.toolPosition.x, player.toolPosition.y);
+        const color = (tileActual instanceof Soil && !tileActual.humedo) ? 0x0000ff : 0xff0000;
+        updateMarco(color, player.toolPosition);
     }
 }
 
@@ -122,13 +103,8 @@ export class Semillas extends Item {
 
     updateFor(player: Player): void {
         const tile = game.terrain.getTileAtPosition(player.toolPosition);
-        if (tile instanceof Soil && tile.humedo && !tile.tienePlanta()) {
-            game.marco.setColor(0x00ff00);
-        } else {
-            game.marco.setColor(0xff0000);
-        }
-        game.marco.setVisibility(true);
-        game.marco.setPosition(player.toolPosition.x, player.toolPosition.y);
+        const color = (tile instanceof Soil && tile.humedo && !tile.tienePlanta()) ? 0x00ff00 : 0xff0000;
+        updateMarco(color, player.toolPosition);
     }
 }
 
@@ -149,12 +125,7 @@ export class Cosecha extends Item {
 
     updateFor(player: Player): void {
         const tile = game.terrain.getTileAtPosition(player.toolPosition);
-        if (tile instanceof Soil && tile.esPlantaLista()) {
-            game.marco.setColor(0x00ff00);
-        } else {
-            game.marco.setColor(0xff0000);
-        }
-        game.marco.setVisibility(true);
-        game.marco.setPosition(player.toolPosition.x, player.toolPosition.y);
+        const color = (tile instanceof Soil && tile.esPlantaLista()) ? 0x00ff00 : 0xff0000;
+        updateMarco(color, player.toolPosition);
     }
 }

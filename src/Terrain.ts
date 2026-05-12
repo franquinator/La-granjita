@@ -3,24 +3,7 @@ import { GameObject} from './GameObject.js';
 import { Vector2D } from './types.js';
 import { game } from './Game.js';
 import { Crop, CropType } from './Crop.js';
-
-let cropTextures: Map<string, PIXI.Texture> = new Map();
-let spritesheetLoaded = false;
-
-async function loadCropSprites(): Promise<void> {
-    if (spritesheetLoaded) return;
-    try {
-        const sheet = await PIXI.Assets.load<PIXI.Texture>('Spring Crops/Spring Crops.png');
-        for (let i = 0; i < 7; i++) {
-            const frame = new PIXI.Rectangle(i * 16, 0, 16, 16);
-            const texture = new PIXI.Texture({ source: sheet.source, frame });
-            cropTextures.set(`frame_${i}`, texture);
-        }
-        spritesheetLoaded = true;
-    } catch (e) {
-        console.error('Error loading crop sprites:', e);
-    }
-}
+import { loadCropTextures, getCropTexture } from './CropTextures.js';
 
 export class Tile extends GameObject {
     color: number;
@@ -35,9 +18,7 @@ export class Tile extends GameObject {
         this.size = size;
 
         this.sprite = new PIXI.Graphics();
-        this.sprite.rect(0, 0, this.size, this.size);
-        this.sprite.fill(this.color);
-        this.sprite.stroke({ width: 1, color: this.color });
+        this.redrawTile();
 
         this.sprite.x = x * size;
         this.sprite.y = y * size;
@@ -45,6 +26,13 @@ export class Tile extends GameObject {
         this.sprite.zIndex = -1;
 
         game.addVisually(this.sprite);
+    }
+
+    redrawTile(): void {
+        if (!this.sprite) return;
+        this.sprite.rect(0, 0, this.size, this.size);
+        this.sprite.fill(this.color);
+        this.sprite.stroke({ width: 1, color: this.color });
     }
 
     init(): void {}
@@ -66,7 +54,7 @@ export class Soil extends Tile {
     constructor(size: number, x: number = 0, y: number = 0) {
         super('soil', 0xB58C00, size, x, y);
         this.sprite!.zIndex = -12;
-        loadCropSprites();
+        loadCropTextures();
     }
     humedecer(): void {
         this.humedo = true;
@@ -74,9 +62,7 @@ export class Soil extends Tile {
         this.startDryTimer();
         if (this.sprite) {
             this.sprite.clear();
-            this.sprite.rect(0, 0, this.size, this.size);
-            this.sprite.fill(this.color);
-            this.sprite.stroke({ width: 1, color: this.color });
+            this.redrawTile();
         }
     }
     private startDryTimer(): void {
@@ -97,9 +83,7 @@ export class Soil extends Tile {
         this.color = 0xB58C00;
         if (this.sprite) {
             this.sprite.clear();
-            this.sprite.rect(0, 0, this.size, this.size);
-            this.sprite.fill(this.color);
-            this.sprite.stroke({ width: 1, color: this.color });
+            this.redrawTile();
         }
         if (this.intervalId !== null) {
             clearInterval(this.intervalId);
@@ -154,7 +138,7 @@ export class Soil extends Tile {
         if (!this.planta || !this.planta.hasSprite()) return;
         const frame = this.planta.getSpriteFrame();
         if (frame === null) return;
-        const texture = cropTextures.get(`frame_${frame}`);
+        const texture = getCropTexture(frame);
         if (!texture) return;
         this.plantSprite = new PIXI.Sprite(texture);
         this.plantSprite.scale.set(this.size / 16);
@@ -168,7 +152,7 @@ export class Soil extends Tile {
         if (!this.planta || !this.plantSprite || !this.planta.hasSprite()) return;
         const frame = this.planta.getSpriteFrame();
         if (frame === null) return;
-        const texture = cropTextures.get(`frame_${frame}`);
+        const texture = getCropTexture(frame);
         if (texture) {
             this.plantSprite.texture = texture;
         }
