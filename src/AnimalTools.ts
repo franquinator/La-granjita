@@ -32,6 +32,10 @@ export class SpawnAnimales extends Item {
         animal.init();
     }
 
+    updateFor(_player: Player): void {
+        this.ejecutarComportamientoDelMarco(_player);
+    }
+
     ejecutarComportamientoDelMarco(player: Player): void {
         game.marco.setColor(0x00ff00);
         game.marco.setVisibility(true);
@@ -49,6 +53,10 @@ export class Alimentar extends Item {
         if (interactable instanceof Animal && !interactable.hasProduct) {
             interactable.feedTimer = 0;
         }
+    }
+
+    updateFor(player: Player): void {
+        this.ejecutarComportamientoDelMarco(player);
     }
 
     ejecutarComportamientoDelMarco(player: Player): void {

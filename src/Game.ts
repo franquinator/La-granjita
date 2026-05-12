@@ -7,7 +7,6 @@ import { Terrain } from './Terrain.js';
 import { UI } from './UI.js';
 import { Item } from './Item.js';
 import { DroppedItem } from './DroppedItem.js';
-import * as Tools from './Tools.js';
 import { Grilla } from './Grilla.js';
 import { DebugGrid } from './DebugGrid.js';
 

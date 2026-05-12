@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { GameObject } from './GameObject.js';
 import { Game } from './Game.js';
-import { Crop, CropType } from './Crop.js';
+import { Crop } from './Crop.js';
 import { Player } from './Player.js';
 
 export const SEED_PRICES = {
@@ -71,8 +71,8 @@ export class FarmPlot extends GameObject {
 
     onInteract(player: Player, _game: Game): void {
         if (!this.crop) {
-            const seedTypes: CropType[] = ['wheat', 'corn', 'tomato'];
-/*             const hasSeeds = seedTypes.some(seed => player.inventory?.hasItem(seed));
+            /* const seedTypes: CropType[] = ['wheat', 'corn', 'tomato'];
+            const hasSeeds = seedTypes.some(seed => player.inventory?.hasItem(seed));
 
             if (hasSeeds && _game.ui.inventory) {
                 const seeds = player.inventory.items.find(i => seedTypes.includes(i.id as CropType));

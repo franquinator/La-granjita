@@ -1,5 +1,4 @@
 import * as PIXI from 'pixi.js';
-import { game } from './Game';
 import { Player } from './Player';
 
 export abstract class Item {
