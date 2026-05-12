@@ -112,7 +112,8 @@ export class Player extends GameObject {
         else {
             game.marco.setVisibility(false);
         }
-        
+        this.recolectarItemsCercanos();
+
         this.updatePosition()
     }
 
@@ -157,6 +158,17 @@ export class Player extends GameObject {
         if (!this.sprite) return;
         this.sprite.x = Math.min(Math.max(this.sprite.x, 0), screenWidth - this.width);
         this.sprite.y = Math.min(Math.max(this.sprite.y, 0), screenHeight - this.height);
+    }
+
+    private recolectarItemsCercanos(): void {
+        const items = game.grillaItems.obtenerEntidadesCercanas(this.position.x, this.position.y, 60);
+        for (const item of items) {
+            const dx = Math.abs(this.position.x - item.x);
+            const dy = Math.abs(this.position.y - item.y);
+            if (dx < 25 && dy < 25) {
+                item.collect();
+            }
+        }
     }
 
 /*     private findInteractable(): any {

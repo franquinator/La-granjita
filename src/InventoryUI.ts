@@ -195,7 +195,11 @@ export class InventoryUI {
             this.draggingSlotIndex = -1;
         });
 
-        this.container.on('pointerupoutside', () => {
+        this.container.on('pointerupoutside', (e: any) => {
+            console.log("pointerupoutside")
+            if (this.draggingSprite) {
+                this.handleDrop(e.data.global);
+            }
             this.draggingSlotIndex = -1;
         });
     }
@@ -233,6 +237,14 @@ export class InventoryUI {
         
         if (targetIndex >= 0 && targetIndex !== this.draggingSlotIndex) {
             this.swapSlots(this.draggingSlotIndex, targetIndex);
+        } else if (targetIndex < 0) {
+            const item = this.slots[this.draggingSlotIndex].item;
+            if (item) {
+                const screenX = pos.x;
+                const screenY = pos.y;
+                this.clearSlot(this.draggingSlotIndex);
+                game.dropItem(item, screenX, screenY);
+            }
         }
         
         game.app?.stage.removeChild(this.draggingSprite);
@@ -261,6 +273,11 @@ export class InventoryUI {
     async setSlotItem(index: number, item: Item): Promise<void> {
         if (index < 0 || index >= this.slots.length) return;
         await this.slots[index].setItem(item);
+    }
+
+    clearSlot(index: number): void {
+        if (index < 0 || index >= this.slots.length) return;
+        this.slots[index].clear();
     }
 
     selectSlot(index: number): void {

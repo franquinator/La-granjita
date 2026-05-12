@@ -5,6 +5,11 @@ import { Marco } from './Marco.js';
 import { GameObject } from './GameObject.js';
 import { Terrain } from './Terrain.js';
 import { UI } from './UI.js';
+import { Item } from './Item.js';
+import { DroppedItem } from './DroppedItem.js';
+import * as Tools from './Tools.js';
+import { Grilla } from './Grilla.js';
+import { DebugGrid } from './DebugGrid.js';
 
 export class Game {
     app: PIXI.Application | null = null;
@@ -16,6 +21,9 @@ export class Game {
     money: number = 0;
     player: Player = new Player({ width: 40, height: 40, color: 0xff6b6b, speed: 300 });
     ui: UI = new UI();
+    droppedItems: DroppedItem[] = [];
+    grillaItems: Grilla = new Grilla();
+    debugGrid!: DebugGrid;
 
     async init(): Promise<void> {
         this.app = new PIXI.Application();
@@ -34,17 +42,29 @@ export class Game {
         this.container = new PIXI.Container();
         this.app.stage.addChild(this.container);
 
+        
+        this.debugGrid = new DebugGrid(this.grillaItems);
+        this.container.addChild(this.debugGrid.graphics);
+
         this.marco.init();
         this.player.init();
         this.player.addMoney(50);
         this.terrain.init();
         this.ui.init();
-        
+        this.grillaItems.init(this.app!.screen.width, this.app!.screen.height, 100);
+
+        this.input.subscribe(() => this.debugGrid.toggle(), ['KeyC']);
 
         this.app.ticker.add((ticker) => {
             const delta = ticker.deltaTime / 60;
             this.update(delta);
         });
+    }
+    
+    async dropItem(item: Item, x: number, y: number): Promise<void> {
+        const dropped = new DroppedItem(item, x, y);
+        await dropped.init();
+        this.droppedItems.push(dropped);
     }
 
     addToUpdate(obj: GameObject): void {
