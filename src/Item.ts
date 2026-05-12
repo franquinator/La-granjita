@@ -5,10 +5,14 @@ export abstract class Item {
     name: string;
     image: string;
     sprite: PIXI.Sprite | null = null;
+    quantity: number = 1;
+    maxStack: number = 99;
 
-    constructor(name: string, image: string) {
+    constructor(name: string, image: string, quantity: number = 1, maxStack: number = 99) {
         this.name = name;
         this.image = image;
+        this.quantity = quantity;
+        this.maxStack = maxStack;
     }
 
     async createSprite(): Promise<PIXI.Sprite> {
@@ -17,6 +21,22 @@ export abstract class Item {
         this.sprite.scale.set(54 / 32);
         this.sprite.texture.source.scaleMode = 'nearest';
         return this.sprite;
+    }
+
+    use(count: number = 1): boolean {
+        if (this.quantity >= count) {
+            this.quantity -= count;
+            return true;
+        }
+        return false;
+    }
+
+    add(count: number = 1): boolean {
+        if (this.quantity + count <= this.maxStack) {
+            this.quantity += count;
+            return true;
+        }
+        return false;
     }
 
     abstract useFor(player: Player): void;

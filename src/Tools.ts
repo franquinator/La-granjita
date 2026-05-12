@@ -5,6 +5,25 @@ import { Item } from './Item';
 import { Soil } from './Terrain';
 import { CropType } from './Crop';
 
+let cropTexturesCache: Map<string, PIXI.Texture> | null = null;
+
+export async function loadCropTextures(): Promise<Map<string, PIXI.Texture>> {
+    if (cropTexturesCache) return cropTexturesCache;
+    const textures = new Map<string, PIXI.Texture>();
+    try {
+        const sheet = await PIXI.Assets.load<PIXI.Texture>('Spring Crops/Spring Crops.png');
+        for (let i = 0; i < 7; i++) {
+            const frame = new PIXI.Rectangle(i * 16, 0, 16, 16);
+            const texture = new PIXI.Texture({ source: sheet.source, frame });
+            textures.set(`frame_${i}`, texture);
+        }
+        cropTexturesCache = textures;
+    } catch (e) {
+        console.error('Error loading crop textures:', e);
+    }
+    return textures;
+}
+
 export class Pala extends Item {
     constructor() {
         super("pala", "herramienta_pala.png");
@@ -50,6 +69,7 @@ export class Regadera extends Item {
 export class Semillas extends Item {
     private textureMap: Map<string, PIXI.Texture> | null = null;
     private cropType: CropType = 'strawberry';
+    private texturesLoaded: boolean = false;
 
     private static availableTypes: CropType[] = ['wheat', 'corn', 'tomato', 'strawberry'];
     private currentTypeIndex: number = 3;
@@ -67,12 +87,19 @@ export class Semillas extends Item {
         return this.cropType;
     }
 
-    constructor(textureMap: Map<string, PIXI.Texture> | null = null) {
+    constructor() {
         super("semillas", "herramienta_semillas.png");
-        this.textureMap = textureMap;
+    }
+
+    private async ensureTextures(): Promise<void> {
+        if (!this.texturesLoaded) {
+            this.textureMap = await loadCropTextures();
+            this.texturesLoaded = true;
+        }
     }
 
     override async createSprite(): Promise<PIXI.Sprite> {
+        await this.ensureTextures();
         if (this.textureMap) {
             const texture = this.textureMap.get('frame_6');
             if (texture) {
@@ -86,6 +113,7 @@ export class Semillas extends Item {
     }
 
     useFor(player: Player): void {
+        if (!this.use(1)) return;
         const tile = game.terrain.getTileAtPosition(player.toolPosition);
         if (tile instanceof Soil && tile.humedo && !tile.tienePlanta()) {
             tile.plantar(this.cropType);

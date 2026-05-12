@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import { GameObject } from './GameObject.js';
 import { Vector2D } from './types.js';
 import { game } from './Game.js';
+import * as Tools from './Tools.js';
 
 
 export interface PlayerOptions {
@@ -54,6 +55,7 @@ export class Player extends GameObject {
             const herramienta = game.ui.inventoryUI.getSelectedItem();
             if(herramienta){
                 herramienta.useFor(this);
+                game.ui.inventoryUI.refreshSelectedSlot();
             }
         };
 
@@ -73,6 +75,20 @@ export class Player extends GameObject {
         game.input.subscribe(() => game.ui.inventoryUI.selectSlot(13), ['Digit2']);
         game.input.subscribe(() => game.ui.inventoryUI.selectSlot(14), ['Digit3']);
         game.input.subscribe(() => game.ui.inventoryUI.selectSlot(15), ['Digit4']);
+        game.input.subscribe(() => this.comprarSemillas(), ['KeyK']);
+    }
+
+    comprarSemillas(): void {
+        const SEED_COST = 5;
+        const selectedItem = game.ui.inventoryUI.getSelectedItem();
+        if (selectedItem && selectedItem instanceof Tools.Semillas) {
+            if (this.money >= SEED_COST && selectedItem.quantity < selectedItem.maxStack) {
+                this.money -= SEED_COST;
+                selectedItem.quantity = Math.min(selectedItem.quantity + 5, selectedItem.maxStack);
+                game.ui.moneyUI.update(this.money);
+                game.ui.inventoryUI.refreshSelectedSlot();
+            }
+        }
     }
 
     update(delta: number): void {
