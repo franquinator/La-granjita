@@ -75,6 +75,7 @@ class InventorySlot {
             this.quantityText.anchor.set(1, 1);
             this.quantityText.x = this.size - 2;
             this.quantityText.y = this.size - 2;
+            this.quantityText.zIndex = 10;
             this.container.addChild(this.quantityText);
         }
     }
@@ -99,6 +100,7 @@ export class InventoryUI {
         this.createSelector();
         this.loadItems();
         this.setupDrag();
+        this.toggleExpanded();
         game.input.subscribe(() => this.toggleExpanded(), ['KeyI']);
     }
 
@@ -158,6 +160,7 @@ export class InventoryUI {
 
     private setupDrag(): void {
         this.container.on('pointerdown', (e: PIXI.FederatedPointerEvent) => {
+            if(!this.expanded)return;
             const pos = e.global;
             const localX = pos.x - this.container.x;
             const localY = pos.y - this.container.y;
@@ -263,6 +266,29 @@ export class InventoryUI {
     async setSlotItem(index: number, item: Item): Promise<void> {
         if (index < 0 || index >= this.slots.length) return;
         await this.slots[index].setItem(item);
+    }
+
+    async addItem(item: Item): Promise<boolean> {
+        for (let i = 0; i < this.slots.length; i++) {
+            const slot = this.slots[i];
+            if (slot.item && slot.item.name === item.name) {
+                const espacio = item.maxStack - slot.item.quantity;
+                if (espacio > 0) {
+                    const cantidadAAgregar = Math.min(espacio, item.quantity);
+                    slot.item.quantity += cantidadAAgregar;
+                    item.quantity -= cantidadAAgregar;
+                    slot.updateQuantityDisplay();
+                    if (item.quantity <= 0) return true;
+                }
+            }
+        }
+        for (let i = 0; i < this.slots.length; i++) {
+            if (!this.slots[i].hasItem()) {
+                await this.setSlotItem(i, item);
+                return true;
+            }
+        }
+        return false;
     }
 
     clearSlot(index: number): void {

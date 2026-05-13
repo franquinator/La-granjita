@@ -19,7 +19,10 @@ export class Pala extends Item {
     }
 
     useFor(player: Player) {
-        game.terrain.convertToSoil(player.toolPosition);
+        const tileActual = game.terrain.getTileAtPosition(player.toolPosition);
+        if (tileActual !instanceof Soil) {
+            game.terrain.convertToSoil(player.toolPosition);
+        }
     }
 
     updateFor(player: Player) {
@@ -94,10 +97,10 @@ export class Semillas extends Item {
     }
 
     useFor(player: Player): void {
-        if (!this.use(1)) return;
         const tile = game.terrain.getTileAtPosition(player.toolPosition);
         if (tile instanceof Soil && tile.humedo && !tile.tienePlanta()) {
             tile.plantar(this.cropType);
+            this.use(1);
         }
     }
 
@@ -116,10 +119,7 @@ export class Cosecha extends Item {
     useFor(player: Player): void {
         const tile = game.terrain.getTileAtPosition(player.toolPosition);
         if (tile instanceof Soil && tile.esPlantaLista()) {
-            const harvested = tile.harvest();
-            if (harvested) {
-                player.addMoney(harvested.value);
-            }
+            tile.harvest();
         }
     }
 

@@ -1,9 +1,10 @@
 import * as PIXI from 'pixi.js';
-import { GameObject} from './GameObject.js';
+import { GameObject } from './GameObject.js';
 import { Vector2D } from './types.js';
 import { game } from './Game.js';
 import { Crop, CropType } from './Crop.js';
 import { loadCropTextures, getCropTexture } from './CropTextures.js';
+import { Item } from './Item.js';
 
 export class Tile extends GameObject {
     color: number;
@@ -11,7 +12,7 @@ export class Tile extends GameObject {
     type: string;
     plantSprite: PIXI.Sprite | null = null;
 
-    constructor(type: string, color: number, size: number, x:number, y:number) {
+    constructor(type: string, color: number, size: number, x: number, y: number) {
         super();
         this.type = type;
         this.color = color;
@@ -35,8 +36,8 @@ export class Tile extends GameObject {
         this.sprite.stroke({ width: 1, color: this.color });
     }
 
-    init(): void {}
-    
+    init(): void { }
+
     destroy(): void {
         if (this.sprite) {
             this.sprite.destroy();
@@ -48,23 +49,23 @@ export class Tile extends GameObject {
 export class Soil extends Tile {
     humedo: boolean = false;
     planta: Crop | null = null;
-    private intervalId: number | null = null;
+    container: PIXI.Container = new PIXI.Container();
     private dryIntervalId: number | null = null;
     private static readonly DRY_TIME: number = 20000;
     constructor(size: number, x: number = 0, y: number = 0) {
         super('soil', 0xB58C00, size, x, y);
         this.sprite!.zIndex = -12;
+
         loadCropTextures();
     }
+
     humedecer(): void {
         this.humedo = true;
         this.color = 0x826400;
         this.startDryTimer();
-        if (this.sprite) {
-            this.sprite.clear();
-            this.redrawTile();
-        }
+        this.actualizarSprite()
     }
+
     private startDryTimer(): void {
         if (this.dryIntervalId !== null) {
             clearTimeout(this.dryIntervalId);
@@ -73,59 +74,33 @@ export class Soil extends Tile {
             this.secarse();
         }, Soil.DRY_TIME);
     }
+
     private secarse(): void {
-        if (this.planta && !this.planta.isReady) {
-            this.planta?.destroy();
-            this.planta = null;
-            this.destroyPlantSprite();
-        }
         this.humedo = false;
         this.color = 0xB58C00;
+        this.actualizarSprite();
+    }
+    
+    private actualizarSprite(){
         if (this.sprite) {
             this.sprite.clear();
             this.redrawTile();
         }
-        if (this.intervalId !== null) {
-            clearInterval(this.intervalId);
-            this.intervalId = null;
-        }
     }
+
     plantar(tipo: CropType): void {
         if (this.humedo && !this.planta) {
-            this.planta = new Crop(tipo);
-            this.createPlantSprite();
-            this.planta.startGrowth();
-            this.startUpdating();
+            this.container.x = this.sprite!.x;
+            this.container.y = this.sprite!.y;
+            game.addVisually(this.container);
+
+            this.planta = new Crop(tipo, this.container);
         }
     }
-    private startUpdating(): void {
-        this.intervalId = window.setInterval(() => {
-            this.updatePlantSprite();
-        }, 1000);
-    }
-    actualizar(): void {
-        if (this.planta) {
-            this.planta.update(1/60);
-            this.updatePlantSprite();
-        }
-    }
-    harvest(): { id: string; name: string; value: number } | null {
-        if (this.planta && this.planta.isReady) {
-            const result = this.planta.harvest();
-            this.planta?.destroy();
-            this.planta = null;
-            if (this.intervalId !== null) {
-                clearInterval(this.intervalId);
-                this.intervalId = null;
-            }
-            if (this.dryIntervalId !== null) {
-                clearTimeout(this.dryIntervalId);
-                this.dryIntervalId = null;
-            }
-            this.destroyPlantSprite();
-            return result;
-        }
-        return null;
+
+    harvest(): void {
+        this.planta!.harvest();
+        this.planta = null;
     }
 
     esPlantaLista(): boolean {
@@ -133,35 +108,6 @@ export class Soil extends Tile {
     }
     tienePlanta(): boolean {
         return this.planta !== null;
-    }
-    private createPlantSprite(): void {
-        if (!this.planta || !this.planta.hasSprite()) return;
-        const frame = this.planta.getSpriteFrame();
-        if (frame === null) return;
-        const texture = getCropTexture(frame);
-        if (!texture) return;
-        this.plantSprite = new PIXI.Sprite(texture);
-        this.plantSprite.scale.set(this.size / 16);
-        this.plantSprite.texture.source.scaleMode = 'nearest';
-        this.plantSprite.x = this.sprite!.x;
-        this.plantSprite.y = this.sprite!.y;
-        this.plantSprite.zIndex = 0;
-        game.addVisually(this.plantSprite);
-    }
-    private updatePlantSprite(): void {
-        if (!this.planta || !this.plantSprite || !this.planta.hasSprite()) return;
-        const frame = this.planta.getSpriteFrame();
-        if (frame === null) return;
-        const texture = getCropTexture(frame);
-        if (texture) {
-            this.plantSprite.texture = texture;
-        }
-    }
-    private destroyPlantSprite(): void {
-        if (this.plantSprite) {
-            this.plantSprite.destroy();
-            this.plantSprite = null;
-        }
     }
 }
 
@@ -174,7 +120,7 @@ export class WetSoil extends Tile {
 
 export class Pasture extends Tile {
     constructor(size: number, x: number = 0, y: number = 0) {
-        super('pasture', 0x24CA3D, size,x,y);
+        super('pasture', 0x24CA3D, size, x, y);
     }
 }
 
@@ -210,7 +156,7 @@ export class Terrain extends GameObject {
         const col = Math.floor(pos.x / this.tileSize);
         const row = Math.floor(pos.y / this.tileSize);
         if (row < 0 || row >= this.height || col < 0 || col >= this.width) return;
-        
+
         this.tiles[row][col].destroy();
         const newTile = new Soil(this.tileSize, col, row);
         this.tiles[row][col] = newTile;
@@ -234,10 +180,10 @@ export class Terrain extends GameObject {
     }
     getTilePosition(pos: Vector2D): Vector2D {
         return new Vector2D(
-            Math.floor(pos.x / this.tileSize)*this.tileSize,
-            Math.floor(pos.y / this.tileSize)*this.tileSize);
+            Math.floor(pos.x / this.tileSize) * this.tileSize,
+            Math.floor(pos.y / this.tileSize) * this.tileSize);
     }
-    getTileAtPosition(pos: Vector2D): Tile | null{
+    getTileAtPosition(pos: Vector2D): Tile | null {
         const col = Math.floor(pos.x / this.tileSize);
         const row = Math.floor(pos.y / this.tileSize);
         if (row < 0 || row >= this.height || col < 0 || col >= this.width) return null;

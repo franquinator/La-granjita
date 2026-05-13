@@ -1,3 +1,12 @@
+import { Item } from './Item.js';
+import { Frutilla } from './Crops.js';
+import { Sprite } from 'pixi.js';
+import { loadCropTextures, getCropTexture } from './CropTextures.js';
+import * as PIXI from 'pixi.js';
+import { game } from './Game.js';
+
+export type CropType = 'wheat' | 'corn' | 'tomato' | 'strawberry';
+
 export const CROP_TYPES = {
     wheat: {
         name: 'Trigo',
@@ -6,7 +15,8 @@ export const CROP_TYPES = {
         color: 0xf5deb3,
         spriteSheet: 'Spring Crops/Spring Crops.png',
         seedFrame: 6,
-        growFrames: [0, 1, 2, 3, 4, 5]
+        growFrames: [0, 1, 2, 3, 4, 5],
+        harvestYield: 1
     },
     corn: {
         name: 'Maíz',
@@ -15,7 +25,8 @@ export const CROP_TYPES = {
         color: 0xffd700,
         spriteSheet: 'Spring Crops/Spring Crops.png',
         seedFrame: 6,
-        growFrames: [0, 1, 2, 3, 4, 5]
+        growFrames: [0, 1, 2, 3, 4, 5],
+        harvestYield: 1
     },
     tomato: {
         name: 'Tomate',
@@ -24,90 +35,74 @@ export const CROP_TYPES = {
         color: 0xff6347,
         spriteSheet: 'Spring Crops/Spring Crops.png',
         seedFrame: 6,
-        growFrames: [0, 1, 2, 3, 4, 5]
+        growFrames: [0, 1, 2, 3, 4, 5],
+        harvestYield: 1
     },
     strawberry: {
         name: 'Frutilla',
-        growTime: 8,
+        growTime: 1000,
         sellPrice: 20,
-        color: 0xff0000,
+        color: 0xff69b4,
         spriteSheet: 'Spring Crops/Spring Crops.png',
-        seedFrame: 6,
-        growFrames: [0, 1, 2, 3, 4, 5]
+        seedFrame: 0,
+        growFrames: [1, 2, 3, 4, 5],
+        harvestYield: 2
     }
-} as const;
-
-export type CropType = keyof typeof CROP_TYPES;
-
-export interface CropData {
-    name: string;
-    growTime: number;
-    sellPrice: number;
-    color: number;
-    spriteSheet: string | null;
-    seedFrame: number | null;
-    growFrames: readonly number[] | null;
-}
+};
 
 export class Crop {
     type: CropType;
-    data: CropData;
+    data: typeof CROP_TYPES[CropType];
     timer: number = 0;
     isReady: boolean = false;
-    private intervalId: number | null = null;
+    sprite: Sprite;
+    intervalId!: number;
+    actualFrameIndex: number = 0;
+    framesTotales!: number;
 
-    constructor(type: CropType) {
+    constructor(type: CropType, container: PIXI.Container) {
         this.type = type;
-        this.data = CROP_TYPES[type] as CropData;
+        this.data = CROP_TYPES[type];
+        this.sprite = new PIXI.Sprite(getCropTexture(this.actualFrameIndex));
+        this.sprite.scale.set(40 / 16);
+        this.sprite.x = 0;
+        this.sprite.y = 0;
+        this.sprite.texture.source.scaleMode = 'nearest';
+        this.sprite.zIndex = 0;
+        container.addChild(this.sprite);
+        this.startUpdating();
     }
+    private updatePlant(): void {
+        this.dibujarFrameActual();
+    }
+    private startUpdating(): void {
+        const interval = setInterval(() => {
 
-    startGrowth(): void {
-        if (this.intervalId !== null) return;
-        this.intervalId = window.setInterval(() => {
-            if (!this.isReady) {
-                this.timer += 1;
-                if (this.timer >= this.data.growTime) {
-                    this.isReady = true;
-                }
+            this.actualFrameIndex++;
+            this.updatePlant();
+
+            if (this.actualFrameIndex >= this.data.growFrames.length) {
+                clearInterval(interval);
+                this.isReady = true;
             }
-        }, 1000);
+        }, this.data.growTime);
     }
 
-    destroy(): void {
-        if (this.intervalId !== null) {
-            clearInterval(this.intervalId);
-            this.intervalId = null;
+    dibujarFrameActual(): void {
+        const texture = getCropTexture(this.data.growFrames[this.actualFrameIndex]);
+        if (texture) {
+            this.sprite.texture = texture;
         }
     }
 
-    update(_delta: number): void {
+    harvest(): void {
+        this.destroyPlantSprite()
     }
 
-    getProgress(): number {
-        return Math.min(this.timer / this.data.growTime, 1);
-    }
-
-    harvest(): { id: string; name: string; value: number } | null {
-        if (this.isReady) {
-            return {
-                id: this.type,
-                name: this.data.name,
-                value: this.data.sellPrice
-            };
+    destroyPlantSprite(): void {
+        if (this.sprite) {
+            this.sprite.destroy();
         }
-        return null;
-    }
-
-    reset(): void {
-        this.timer = 0;
-        this.isReady = false;
-    }
-
-    getSpriteFrame(): number | null {
-        if (!this.data.spriteSheet) return null;
-        const progress = this.getProgress();
-        const frameIndex = Math.floor(progress * (this.data.growFrames!.length - 1));
-        return this.data.growFrames![frameIndex];
     }
 
     hasSprite(): boolean {

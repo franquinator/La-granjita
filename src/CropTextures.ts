@@ -8,7 +8,7 @@ export async function loadCropTextures(): Promise<Map<string, PIXI.Texture>> {
     const textures = new Map<string, PIXI.Texture>();
     try {
         const sheet = await PIXI.Assets.load<PIXI.Texture>('Spring Crops/Spring Crops.png');
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < 9; i++) {
             const frame = new PIXI.Rectangle(i * 16, 0, 16, 16);
             const texture = new PIXI.Texture({ source: sheet.source, frame });
             textures.set(`frame_${i}`, texture);

@@ -7,12 +7,14 @@ export abstract class Item {
     sprite: PIXI.Sprite | null = null;
     quantity: number = 1;
     maxStack: number = 99;
+    price: number = 0;
 
-    constructor(name: string, image: string, quantity: number = 1, maxStack: number = 99) {
+    constructor(name: string, image: string, quantity: number = 1, maxStack: number = 99, price: number = 0) {
         this.name = name;
         this.image = image;
         this.quantity = quantity;
         this.maxStack = maxStack;
+        this.price = price;
     }
 
     async createSprite(): Promise<PIXI.Sprite> {

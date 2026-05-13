@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { GameObject } from './GameObject.js';
-import { Game } from './Game.js';
+import { game, Game } from './Game.js';
 import { Crop } from './Crop.js';
 import { Player } from './Player.js';
 
@@ -15,6 +15,7 @@ export class FarmPlot extends GameObject {
     row: number;
     tileSize: number;
     crop: Crop | null = null;
+    container: PIXI.Container = new PIXI.Container();
 
     constructor(col: number, row: number, tileSize: number = 60) {
         super();
@@ -26,19 +27,12 @@ export class FarmPlot extends GameObject {
         this.zIndex = 1;
 
         this.sprite = new PIXI.Graphics();
-        this.drawPlot();
-    }
 
-    drawPlot(): void {
-        if (!this.sprite) return;
+        this.container.x = this.sprite.x;
+        this.container.x = this.sprite.x;
+        game.app?.stage.addChild(this.container);
+
         this.drawBase();
-    }
-
-    update(delta: number, _game: Game): void {
-        if (this.crop) {
-            this.crop.update(delta);
-            this.drawCrop();
-        }
     }
 
     private drawBase(): void {
@@ -72,7 +66,7 @@ export class FarmPlot extends GameObject {
         }
     }
 
-    onInteract(player: Player, _game: Game): void {
+    onInteract(_player: Player, _game: Game): void {
         if (!this.crop) {
             /* const seedTypes: CropType[] = ['wheat', 'corn', 'tomato'];
             const hasSeeds = seedTypes.some(seed => player.inventory?.hasItem(seed));
@@ -86,12 +80,12 @@ export class FarmPlot extends GameObject {
                 }
             } */
         } else if (this.crop.isReady) {
-            const harvested = this.crop.harvest();
+            /* const harvested = this.crop.harvest();
             if (harvested) {
                 player.addMoney(harvested.value);
                 this.crop = null;
                 this.drawPlot();
-            }
+            } */
         }
     }
 
